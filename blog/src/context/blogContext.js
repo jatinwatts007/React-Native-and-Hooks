@@ -1,9 +1,12 @@
 // import React, { useState, useReducer } from 'react';
 import createDataContext from './createDataContext';
+import jsonserver from '../api/jsonserver';
 
 // const BlogContext = React.createContext();
 const blogReducer = (state, action) => {
   switch (action.type) {
+    case 'get_blog':
+      return action.payload;
     case 'edit_blog':
       return state.map((blogPost) => {
         return blogPost.id === action.payload.id ? action.payload : blogPost;
@@ -26,22 +29,32 @@ const blogReducer = (state, action) => {
 
 //export const BlogProvider = ({ children }) => {
 // const [blogPosts, dispatch] = useReducer(blogReducer, []);
+const getBlogPosts = (dispatch) => {
+  return async () => {
+    const response = await jsonserver.get('/blogposts');
+
+    dispatch({ type: 'get_blog', payload: response.data });
+  };
+};
 
 const addBlogPosts = (dispatch) => {
-  return (title, content, callback) => {
-    dispatch({ type: 'add_blog', payload: { title, content } });
+  return async (title, content, callback) => {
+    await jsonserver.post('/blogposts', { title, content });
+    // dispatch({ type: 'add_blog', payload: { title, content } });
     if (callback) callback();
   };
 };
 
 const deleteBlogPosts = (dispatch) => {
-  return (id) => {
+  return async (id) => {
+    await jsonserver.delete(`/blogposts/${id}`);
     dispatch({ type: 'delete_blog', payload: id });
   };
 };
 
 const editBlogPosts = (dispatch) => {
-  return (id, title, content, callback) => {
+  return async (id, title, content, callback) => {
+    await jsonserver.put(`/blogposts/${id}`, { title, content });
     dispatch({
       type: 'edit_blog',
       payload: { title: title, id: id, content: content },
@@ -59,7 +72,7 @@ const editBlogPosts = (dispatch) => {
 //};
 export const { Context, Provider } = createDataContext(
   blogReducer,
-  { addBlogPosts, deleteBlogPosts, editBlogPosts },
-  [{ title: 'TEST BLOG', content: 'TEST CONTENT', id: 1 }],
+  { addBlogPosts, deleteBlogPosts, editBlogPosts, getBlogPosts },
+  [],
 );
 // export default BlogContext;
